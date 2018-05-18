@@ -1,0 +1,179 @@
+#!/bin/bash
+
+backupMysql(){
+     echo "backup Mysql"
+     DATA=`date +%Y-%m_%d-%H-%M`
+     mysql -u root -h localhost -p123@qwe -e 'show databases;'
+     echo "Digite o banco:"
+     read BANCO
+     echo "Digite seu usuario:"
+     read USUARIO
+     echo "Digite sua senha:"
+     read SENHA
+
+    ( mysqldump -u $USUARIO -p$SENHA -x -e -B $BANCO > /home/backupmysql/bkp_mysql-$DATA.sql)
+
+      if(($?==0))
+     then
+         STATUS="Sucesso"
+     else
+         if (($?==1))
+             then
+                STATUS="Falhou"
+             fi
+      fi
+
+     echo "-------------------------------------------">>arquivo.log
+     echo "-- BACKUP MYSQL --" >>arquivo.log
+     echo "-- DATA: $DATA" >>arquivo.log
+     echo "-- STATUS: $STATUS" >>arquivo.log
+     echo "-------------------------------------------">>arquivo.log
+     menu
+}
+
+
+restaurarMysql(){
+        echo "r Mysql"
+
+        DATA=`date +%Y-%m_%d-%H-%M`
+        echo "Digite seu usuario"
+        read USUARIO
+        echo "Digite sua senha"
+        read SENHA
+        cd  /home/backupmysql
+        ls
+        echo "Digite o nome do arquivo para restaurar"
+        read ARQUIVORESTAURAR
+        mysql -u $USUARIO -h localhost -p$SENHA -e 'show databases'
+        echo "digite seu banco"
+        read BANCO
+	
+        (mysqldump -u $USUARIO -p$SENHA  $BANCO < $ARQUIVORESTAURAR)
+
+        if(($?==0))
+     then
+         STATUS="Sucesso"
+     else
+         if (($?==1))
+             then
+                STATUS="Falhou"
+             fi
+      fi
+      cd
+     echo "-------------------------------------------" >> arquivo.log
+      echo "-- RESTAURACAO MYSQL --" >> arquivo.log
+     echo "-- DATA: $DATA" >> arquivo.log
+     echo "-- STATUS: $STATUS" >>arquivo.log
+     echo "----------------------------------------------">> arquivo.log
+
+
+        menu
+}
+
+backuppostgre(){
+        echo "b Postegre"
+        DATA=`date +%Y-%m_%d-%H-%M`
+        psql -U postgres -l
+        echo "Digite o nome do banco";
+        read BANCO
+
+        (pg_dump -U postgres -h localhost -F c -Z 9 -b $BANCO > /home/backuppostgre/backup_postgre-$DATA.dump)
+
+        if(($?==0))
+     then
+         STATUS="Sucesso"
+     else
+         if (($?==1))
+             then
+                STATUS="Falhou"
+             fi
+      fi
+
+
+         echo "-------------------------------------------"
+     echo "-- BACKUP POSTGRE --" >>arquivo.log
+     echo "-- DATA: $DATA" >>arquivo.log
+     echo "-- STATUS: $STATUS" >>arquivo.log
+        menu
+}
+
+
+function restaurarPostegree(){
+
+        DATA=`date +%Y-%m_%d-%H-%M`
+
+        echo "Digite seu usuario"
+        read USUARIO
+        psql -U $USUARIO -l
+        echo "Digite o nome do banco"
+        read BANCO
+        cd  /home/backuppostgre
+        ls
+       echo "Digite o nome do arquivo para restaurar"
+       read ARQUIVORESTAURAR
+       echo "Digite a senha para deletar o banco"
+       dropdb -h localhost -W -U $USUARIO $BANCO
+       echo "Digite a senha para criar o banco" 
+       createdb -h localhost -W -U $USUARIO $BANCO
+       echo "Restaurando o banco"
+       echo "..."
+       echo "....."
+       echo "........."
+        
+       pg_restore -U $USUARIO -d $BANCO -F c -w < /home/backuppostgre/$ARQUIVORESTAURAR 
+
+      echo "Feito com sucesso"
+
+         if(($?==0))
+     then
+         STATUS="Sucesso"
+     else
+         if (($?==1))
+             then
+                STATUS="Falhou"
+             fi
+      fi
+
+     cd
+     echo "-------------------------------------------">>arquivo.log
+     echo "-- RESTAURAR POSTGRE --" >>arquivo.log
+     echo "-- DATA: $DATA" >>arquivo.log
+     echo "-- STATUS: $STATUS" >>arquivo.log
+     echo "-------------------------------------------">>arquivo.log
+        menu
+
+ }
+
+
+menu(){
+echo "--X-- TRABALHO PROFESSOR TÁSSIO --X--"
+echo "Selecione uma opcao"
+echo "1 - Backup do Mysql"
+echo "2 - Restaurar banco do Mysql"
+echo "3 - Backup do Postgre"
+echo "4 - Restaurar banco do Postegree"
+echo "5 - Sair"
+read RESPOSTA
+case $RESPOSTA in
+		1)
+			backupMysql
+		;;
+		2)
+			restaurarMysql
+		;;
+		3)
+			backuppostgre
+		;;
+		4)
+			restaurarPostegree
+		;;
+		5)
+		;;
+		*) echo "Opçao invalida"
+			menu
+		;;
+esac
+}
+menu
+
+		
